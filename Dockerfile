@@ -1,4 +1,4 @@
-FROM python:3.6.8
+FROM python:3.6-alpine
 
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /Collect
@@ -8,6 +8,6 @@ RUN pip install -r requirements.txt
 ENV DEBUG=0
 ENV ALLOWED_HOSTS=*
 ENV SECRET_KEY=1v3&61&#p(g-x!c%zix&-5t-%efp&xc$m+qu*+7pzcwatzxfq0
-RUN python manage.py makemigrations --noinput
-RUN python manage.py migrate --noinput
-RUN celery -A Collect worker -l info & python manage.py runserver 0.0.0.0:5000
+#RUN python manage.py makemigrations --noinput
+#RUN python manage.py migrate --noinput
+CMD ["./script.sh"]
