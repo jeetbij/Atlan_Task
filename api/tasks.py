@@ -17,7 +17,7 @@ def process_file(self, file):
 	for i in range(total):
 		print(i)
 		self.update_state(state='PROGRESS', meta={'done': round((i*100.0)/(total*1.0), 2)})
-		# time.sleep(1.5)
+		time.sleep(0.5)
 	return True
 
 @task(bind=True)
