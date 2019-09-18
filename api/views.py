@@ -23,12 +23,14 @@ class UploadView(APIView):
 		if task_id:	
 			result = AsyncResult(task_id)
 			if result.state == 'SUCCESS':
+				print(result.get('file', ''))
 				return Response({
 					"status": "Success",
 					"result": {
 						"state": result.state,
 						"done": result.info,
-						"file": "{}{}".format(settings.MEDIA_URL, result.get()['file'])
+						"result": result.get(),
+						"file": "{}{}".format(settings.MEDIA_URL, result.get())
 						}
 					})	
 			return Response({
@@ -44,9 +46,9 @@ class UploadView(APIView):
 			})
 
 	def post(self, request, task_id, format=None):
-
+		
 		data = request.data.copy()
-
+		
 		file = data.get('file', '')
 
 		if file:

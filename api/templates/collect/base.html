@@ -24,8 +24,9 @@
 		</div>
 		<small id="show_message"></small>
 		<div class="custom-file">
-			<input type="file" class="custom-file-input" id="customFile">
-			<label class="custom-file-label" for="customFile">Choose file</label>
+			<input type="file" v-model="file" class="custom-file-input" id="customFile" onchange="fileName(this)">
+			<label class="custom-file-label" for="customFile" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">Choose file</label>
+			<small v-show="fileError" style="color: red;">File field is required.</small>
 		</div>
 		<button :disabled="isSubmit" type="button" @click.prevent="isSubmit=true; uploadFile()" class="btn btn-primary" style="margin-top: 10px; float: right;">Submit</button>
 		<button type="button" @click.prevent="exportData()" class="btn btn-primary" style="margin-top: 10px; margin-right: 10px; float: right;">Export</button>
@@ -51,8 +52,13 @@
 			margin: 100px auto;
 		}
 	</style>
-
 	<script>
+		function fileName(ele){
+            var fileName = $(ele).val();
+            // console.log(fileName.split('\\'))
+            $(ele).next('.custom-file-label').html(fileName.split('\\').pop());
+        }
+
 		var csrf_token = "{{ csrf_token }}"
 		var app = new Vue({
 			delimiters: ['[[', ']]'],
@@ -63,27 +69,37 @@
 				taskId: '',
 				interval: '',
 				isSubmit: false,
-				download: false
+				download: false,
+				file: '',
+				fileError: false
 			},
 			methods: {
 				uploadFile: function() {
 					let vm = this
-					axios.post('/upload/', {
-						"csrfmiddlewaretoken": csrf_token,
-						"file": "txt"
-					}).then(function(response) {
-						vm.showProgressBar = true
-						vm.taskId = response.data.task_id
-						localStorage.setItem('task_id', vm.taskId)
-						localStorage.setItem('type', 'upload')
-						$("#toast_title").html(response.data.status)
-						$('#toast_body').html(response.data.message)
-						$("#myToast").toast({
-							delay: 5000
-						});
-						$("#myToast").toast('show');
-						$("#show_message").html('Uploading....')
-					})
+					vm.download = false;
+					if (vm.file) {
+						vm.fileError = false;
+						axios.post('/upload/', {
+							"csrfmiddlewaretoken": csrf_token,
+							"file": vm.file
+						}).then(function(response) {
+							vm.file = ''
+							vm.showProgressBar = true
+							vm.taskId = response.data.task_id
+							localStorage.setItem('task_id', vm.taskId)
+							localStorage.setItem('type', 'upload')
+							$("#toast_title").html(response.data.status)
+							$('#toast_body').html(response.data.message)
+							$("#myToast").toast({
+								delay: 5000
+							});
+							$("#myToast").toast('show');
+							$("#show_message").html('Importing....')
+						})
+					} else {
+						vm.fileError = true;
+						vm.isSubmit = false;
+					}
 				},
 
 				getStatus: function() {
@@ -97,9 +113,12 @@
 									vm.isSubmit = false
 									localStorage.removeItem('task_id')
 									vm.showProgressBar = false
+									vm.progress = 0
+									$('.custom-file-label').html('Choose file')
 									$("#show_message").html('Task Completed.')
-									if (response.data.result.file) {
+									if (response.data.result.result != true) {
 										$("#link").attr("href", response.data.result.file)
+										$("#link").attr("download", "")
 										$("#link")[0].click()
 										vm.download = true
 									}
@@ -119,6 +138,7 @@
 								vm.progress = 0
 								vm.taskId = ''
 								vm.isSubmit = false
+								$('.custom-file-label').html('Choose file')
 								localStorage.removeItem('task_id')
 								localStorage.removeItem('type')
 								$("#toast_title").html(response.data.status)
@@ -133,6 +153,7 @@
 				},
 				exportData: function() {
 					let vm = this
+					vm.download = false
 					axios.get('/export/'
 						).then(function(response) {
 							vm.showProgressBar = true
@@ -145,8 +166,8 @@
 								delay: 5000
 							});
 							$("#myToast").toast('show');
-							$("#show_message").html('Downloading....')
-							console.log(response)
+							$("#show_message").html('Exporting....')
+							// console.log(response)
 						})
 				}
 			},
@@ -158,16 +179,15 @@
 					this.showProgressBar = true
 					let type = localStorage.getItem('type')
 					if(type == 'download') {
-						$("#show_message").html('Downloading....')
+						$("#show_message").html('Exporting....')
 					} else {
-						$("#show_message").html('Uploading....')
+						$("#show_message").html('Importing....')
 					}
 				}
 				console.log(this.taskId)
 			},
 		});
 	</script>
-
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>

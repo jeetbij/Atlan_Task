@@ -11,7 +11,9 @@ from django.conf import settings
 @task(bind=True)
 def process_file(self, file):
 	logger.info("File is being processed")
-	total = 60
+	reader = csv.reader(file)
+	total = len(list(reader))
+	# total = 5
 	for i in range(total):
 		print(i)
 		self.update_state(state='PROGRESS', meta={'done': round((i*100.0)/(total*1.0), 2)})
@@ -27,4 +29,4 @@ def export_process(self):
 			writer.writerow(["Hello", "Atlan!", "Hello", "Atlan!"])
 			self.update_state(state='PROGRESS', meta={'done': round((i*100.0)/(total*1.0), 2)})
 			time.sleep(1.4)
-	return {"file": "{}.csv".format(self.request.id)}
+	return "{}.csv".format(self.request.id)
